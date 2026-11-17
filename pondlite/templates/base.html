@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>{% block title %}PondLite{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="PondLite home"><span class="brand-mark">P</span><span>PondLite</span></a>
+    <p class="brand-tagline">Small data. Useful models.</p>
+    <nav class="primary-nav" aria-label="Pipeline">
+      {% for key, number, label in [('ingest','01','Ingest'),('curate','02','Curate'),('train','03','Train'),('eval','04','Evaluate'),('serve','05','Serve')] %}
+      <a href="/{{ key }}" class="nav-link{% if active == key %} active{% endif %}" {% if active == key %}aria-current="page"{% endif %}><span class="nav-number">{{ number }}</span><span>{{ label }}</span></a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-footer">
+      <span class="environment"><span class="status-dot"></span>Local workspace</span>
+      {% if auth_enabled %}<span class="user-label">{{ current_user }}</span><form method="post" action="/logout"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}"><button class="text-button" type="submit">Sign out</button></form>{% endif %}
+    </div>
+  </aside>
+  <main class="workspace">
+    <header class="topbar"><span>Workspace / {{ active|capitalize }}</span><span class="topbar-note">Raw data to reliable answers</span></header>
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+</body>
+</html>

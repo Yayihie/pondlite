@@ -1,0 +1,3 @@
+{"instruction": "Contact me at jane.doe@example.com or 415-555-0132 about billing", "output": "I have removed your personal contact info. Please reach out through the in-app messenger only."}
+{"bad json line
+{"instruction": "x", "output": "y"}

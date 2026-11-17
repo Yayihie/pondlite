@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% from '_macros.html' import csrf, notice_box %}{% block title %}Serve · PondLite{% endblock %}{% block content %}
+<section class="page-heading"><div><span class="eyebrow">05 · Live answers</span><h1>Answers grounded in your data.</h1><p>Known questions get sourced answers. Unknown questions get an honest refusal.</p></div>{% if health %}<span class="status-chip {{ 'done' if health.status == 'ok' else 'running' }}">{{ health.status }} · {{ health.code_fingerprint }}</span>{% endif %}</section>
+{{ notice_box(notice) }}
+<div class="serve-grid">
+<section class="panel"><div class="panel-heading"><h2>Ask the current model</h2><span>Grounded by default</span></div><form method="post" action="/serve">{{ csrf() }}<label for="prompt">Question</label><textarea id="prompt" name="prompt" rows="5" placeholder="How do I cancel my subscription?" required></textarea><div class="form-footer"><span class="field-note">No answer is invented below the confidence threshold.</span><button class="primary-button" type="submit">Get answer</button></div></form></section>
+<section class="panel"><div class="panel-heading"><h2>Load a completed run</h2><span>Hot-swap without restarting</span></div><form method="post" action="/serve">{{ csrf() }}<label for="run_dir">Model version</label><select id="run_dir" name="run_dir" required>{% for row in runs %}<option value="{{ row.run_dir }}">{{ row.name }} v{{ row.version }}</option>{% endfor %}</select><div class="form-footer"><span class="field-note">API port 8420</span><button class="secondary-button" type="submit">Load model</button></div></form></section>
+</div>
+{% if reply %}<section class="answer-panel" aria-live="polite"><div class="answer-meta"><span>Answer</span>{% if reply.meta.mode %}<span class="status-chip {{ 'done' if reply.meta.mode == 'grounded' else '' }}">{{ reply.meta.mode }}</span>{% endif %}{% if reply.meta.confidence is defined %}<span>{{ '%.1f'|format(reply.meta.confidence * 100) }}% confidence</span>{% endif %}</div><p>{{ reply.text }}</p>{% if reply.meta.source_instruction %}<details><summary>Matched training example</summary><p>{{ reply.meta.source_instruction }}</p></details>{% endif %}</section>{% endif %}
+<section class="data-section"><div class="section-heading"><h2>OpenAI-style endpoint</h2><span>POST /v1/chat/completions</span></div><pre class="code-block">curl http://127.0.0.1:8420/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"How do I cancel?"}]}'</pre></section>
+{% endblock %}

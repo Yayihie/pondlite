@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% from '_macros.html' import csrf, notice_box %}{% block title %}Ingest · PondLite{% endblock %}{% block content %}
+<section class="page-heading"><div><span class="eyebrow">01 · Source data</span><h1>Start with real conversations.</h1><p>Import support exchanges, FAQs, or any instruction-and-answer pairs.</p></div><span class="heading-meta">JSONL · CSV · TXT</span></section>
+{{ notice_box(notice) }}
+<div class="form-grid">
+  <section class="panel"><div class="panel-heading"><h2>Paste JSONL</h2><span>Fastest for a small batch</span></div>
+    <form method="post" action="/ingest">{{ csrf() }}
+      <label for="data">Records</label><textarea id="data" name="data" rows="12" placeholder='{"instruction":"How do I cancel?","output":"Open Billing and choose Cancel."}'></textarea>
+      <label for="paste-name">Dataset name</label><input id="paste-name" name="name" value="demo" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,63}" required>
+      <div class="form-footer"><span class="field-note">Up to 16 MB</span><button class="primary-button" type="submit">Import records</button></div>
+    </form>
+  </section>
+  <section class="panel"><div class="panel-heading"><h2>Upload a file</h2><span>Keep your existing format</span></div>
+    <form method="post" action="/ingest" enctype="multipart/form-data">{{ csrf() }}
+      <label for="file">Source file</label><div class="file-field"><input id="file" type="file" name="file" accept=".jsonl,.csv,.txt" required></div>
+      <label for="upload-name">Dataset name</label><input id="upload-name" name="name" value="demo" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,63}" required>
+      <div class="format-list"><span><strong>JSONL</strong> instruction, input, output</span><span><strong>CSV</strong> matching column names</span><span><strong>TXT</strong> Q: and A: blocks</span></div>
+      <div class="form-footer"><span class="field-note">Malformed rows are reported</span><button class="secondary-button" type="submit">Upload file</button></div>
+    </form>
+  </section>
+</div>
+<section class="data-section"><div class="section-heading"><h2>Versioned datasets</h2><span>{{ datasets|length }} total</span></div>
+{% if datasets %}<div class="table-wrap"><table><thead><tr><th>Dataset</th><th>Version</th><th class="numeric">Train</th><th class="numeric">Holdout</th><th>Created</th></tr></thead><tbody>{% for row in datasets %}<tr><td class="strong">{{ row.name }}</td><td>v{{ row.version }}</td><td class="numeric">{{ row.n_records }}</td><td class="numeric">{{ row.n_holdout }}</td><td>{{ row.created_at }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><strong>No datasets yet</strong><span>Import your first batch above.</span></div>{% endif %}</section>
+{% endblock %}

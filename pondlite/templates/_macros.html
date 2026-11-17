@@ -1,0 +1,3 @@
+{% macro csrf() %}{% if auth_enabled %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}{% endmacro %}
+{% macro notice_box(notice) %}{% if notice %}<section class="notice" role="status"><strong>{{ notice.title }}</strong><span>{{ notice.detail }}</span>{% if notice.errors %}<pre>{{ notice.errors|tojson(indent=2) }}</pre>{% endif %}</section>{% endif %}{% endmacro %}
+{% macro status_chip(status) %}<span class="status-chip {{ status }}"><span class="status-dot"></span>{{ status|capitalize }}</span>{% endmacro %}

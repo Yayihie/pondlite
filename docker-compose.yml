@@ -1,0 +1,40 @@
+services:
+  pondlite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      PONDLITE_ENV: production
+      PONDLITE_USERNAME: "${PONDLITE_USERNAME:-}"
+      PONDLITE_PASSWORD: "${PONDLITE_PASSWORD:-}"
+      PONDLITE_SECRET_KEY: "${PONDLITE_SECRET_KEY:-}"
+      PONDLITE_RUN_DIR: "${PONDLITE_RUN_DIR:-runs/demo/v5}"
+      HF_HOME: /app/state/huggingface
+    expose:
+      - "8420"
+      - "8421"
+    ports:
+      - "127.0.0.1:8420:8420"
+      - "127.0.0.1:8421:8421"
+    volumes:
+      - pondlite_data:/app/data
+      - pondlite_runs:/app/runs
+      - pondlite_raw:/app/raw
+      - pondlite_state:/app/state
+    networks:
+      - pondlite_local
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  pondlite_data:
+  pondlite_runs:
+  pondlite_raw:
+  pondlite_state:
+
+networks:
+  pondlite_local:
+    driver: bridge

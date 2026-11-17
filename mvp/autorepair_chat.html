@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Fairview Auto — AI Service Assistant</title>
+<style>
+  :root {
+    --ink: #16191f;
+    --muted: #626b7a;
+    --subtle: #8992a1;
+    --page: #f5f6f8;
+    --surface: #ffffff;
+    --accent: #5e6ad2;
+    --accent-dark: #4b56b8;
+    --success: #147d55;
+    --success-bg: #e9f6ef;
+    --danger: #b4232f;
+    --danger-bg: #fff0f1;
+    --border: #dfe3e8;
+    --border-strong: #cbd1d9;
+    --radius: 8px;
+    --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); background: var(--page); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+  .app { max-width: 700px; margin: 0 auto; padding: 40px 20px 80px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 7px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 16px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px 0; letter-spacing: -0.5px; }
+  .tagline { color: var(--muted); font-size: 13px; margin: 0 0 24px 0; }
+  .meta { display: flex; gap: 16px; color: var(--subtle); font-size: 12px; font-family: var(--mono); margin-bottom: 24px; }
+  #chat { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); height: 420px; display: flex; flex-direction: column; overflow: hidden; margin-bottom: 18px; }
+  #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 82%; padding: 10px 14px; border-radius: var(--radius); font-size: 14.5px; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: #f7f8fa; color: var(--ink); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .meta-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; margin-top: 6px; color: var(--subtle); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .dot.ok { background: var(--success); }
+  .dot.low { background: var(--danger); }
+  .source { font-family: var(--mono); font-size: 11px; color: var(--muted); border-top: 1px solid #e9ecf0; margin-top: 6px; padding-top: 6px; }
+  .form { display: flex; gap: 10px; border-top: 1px solid var(--border); padding: 14px 20px; background: var(--surface); }
+  input[type=text] { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--ink); background: #fff; font: inherit; font-size: 14px; }
+  input[type=text]:focus { outline: none; border-color: var(--accent); }
+  button { min-height: 42px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--radius); background: var(--accent); color: #fff; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; }
+  button:hover { background: var(--accent-dark); }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  .empty { color: var(--muted); font-size: 13px; align-self: center; margin-top: 60px; }
+  .notice { margin-bottom: 16px; padding: 12px 16px; border-radius: var(--radius); background: var(--success-bg); border: 1px solid #c4e5d3; color: #126341; font-size: 13px; }
+  .notice b { color: #126341; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand-mark">FA</div>
+    <div>
+      <h1>Fairview Auto &amp; Tire</h1>
+      <p class="tagline">AI service assistant · Instant answers on hours, pricing, and appointments</p>
+    </div>
+  </header>
+
+  <div class="meta"><span>1240 Miller Industrial Parkway</span><span>·</span><span>(555) 014-2280</span><span>·</span><span>Mon–Fri 7:30–6, Sat 8–4</span></div>
+
+  <div id="chat">
+    <div id="messages">
+      <div class="msg bot">
+        Hi — I'm Fairview Auto's service assistant. Ask me about hours, pricing, services, or booking an appointment.
+        <div class="meta-chip"><span class="dot ok"></span><span>ready</span></div>
+      </div>
+    </div>
+    <div class="form">
+      <input type="text" id="prompt" placeholder="Ask about hours, oil change pricing, brake service…" autocomplete="off">
+      <button type="button" id="send">Send</button>
+    </div>
+  </div>
+
+  <div class="notice" id="notice" style="display:none"><b>Mode:</b> <span id="notice-text"></span></div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8422/v1/chat/completions';
+const messagesEl = document.getElementById('messages');
+const promptEl = document.getElementById('prompt');
+const sendBtn = document.getElementById('send');
+const noticeEl = document.getElementById('notice');
+const noticeText = document.getElementById('notice-text');
+
+function addBot(text, meta) {
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.textContent = text;
+  if (meta) {
+    const chip = document.createElement('div');
+    chip.className = 'meta-chip';
+    const dot = document.createElement('span');
+    dot.className = 'dot ' + (meta.mode === 'grounded' ? 'ok' : 'low');
+    const label = document.createElement('span');
+    label.textContent = meta.mode === 'grounded' ? 'Grounded answer · ' + Math.round(meta.confidence * 100) + '% confidence' : 'Honest refusal · below confidence threshold';
+    chip.appendChild(dot);
+    chip.appendChild(label);
+    div.appendChild(chip);
+    if (meta.source_instruction) {
+      const src = document.createElement('div');
+      src.className = 'source';
+      src.textContent = 'Matched: "' + meta.source_instruction + '"';
+      div.appendChild(src);
+    }
+  }
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addUser(text) {
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.textContent = text;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function send() {
+  const text = promptEl.value.trim();
+  if (!text) return;
+  promptEl.value = '';
+  sendBtn.disabled = true;
+  addUser(text);
+
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: text }] })
+    });
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content || '(no answer)';
+    const meta = data.pondlite || {};
+    addBot(content, meta);
+
+    noticeEl.style.display = 'block';
+    noticeText.textContent = (meta.mode === 'grounded' ? 'Grounded' : 'Abstained') + ' · ' + Math.round((meta.confidence || 0) * 100) + '% confidence';
+  } catch (e) {
+    addBot("I'm having trouble connecting. Please call us at (555) 014-2280.");
+  } finally {
+    sendBtn.disabled = false;
+    promptEl.focus();
+  }
+}
+
+sendBtn.addEventListener('click', send);
+promptEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+promptEl.focus();
+</script>
+</body>
+</html>
