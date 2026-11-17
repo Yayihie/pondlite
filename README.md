@@ -89,6 +89,32 @@ Everything is tracked in `pondlite.db` (sqlite): datasets, runs, evals.
 - Run loading accepts completed artifacts under `runs/` only. Dataset names and upload filenames are
   validated, and dynamic values in the UI are HTML-escaped.
 
+## MVP: AI receptionist for auto repair shops
+
+The repo ships with a working MVP for an independent auto repair shop (`Fairview Auto & Tire`):
+
+- `mvp/autorepair_chat.html` — clean chat UI (no glassmorphism, cursor beams, or scroll fades)
+- Trained on 30 shop FAQ records: hours, walk-ins, oil change pricing, brake service, financing, location
+- Pipeline: `ingest` → `curate` → `train` (DistilGPT-2 LoRA) → `eval` → `serve` on port 8422
+- The chat calls `POST /v1/chat/completions` and displays grounded answers with confidence scores
+- Grounded answers show a green dot + matched source; low-confidence questions get an honest refusal
+
+See `raw/autorepair_shop.jsonl` for the training data format (instruction/input/output JSONL).
+
+```bash
+# Rebuild the MVP model locally
+python3 -m pondlite.ingest raw/autorepair_shop.jsonl
+python3 -m pondlite.curate --from-ingested --name autorepair --holdout 0.1
+python3 -m pondlite.train --dataset data/autorepair/v1 --name autorepair --epochs 15 --model distil
+python3 -m pondlite.serve --run-dir runs/autorepair/v2 --port 8422
+
+# Open the chat
+python3 -m http.server 8423 --directory mvp/
+# then visit http://localhost:8423/autorepair_chat.html
+```
+
+`runs/`, `data/`, `raw/`, and `pondlite.db` are gitignored — each shop trains their own model on their own data.
+
 ## Development
 
 ```bash
