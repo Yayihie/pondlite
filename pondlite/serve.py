@@ -21,6 +21,8 @@ from .respond import TfidfRetriever
 from .store import load_jsonl, resolve_run_dir
 from .version import ROOT, code_fingerprint
 
+GROUND_THRESHOLD = float(os.environ.get("PONDLITE_GROUNDED_THRESHOLD", "0.45"))
+
 @asynccontextmanager
 async def lifespan(app):
     load_default_run()
@@ -142,7 +144,7 @@ def chat_completions(req: ChatRequest, credentials=Depends(require_api_auth)):
         user_messages = [message.content for message in req.messages if message.role == "user"]
         if not user_messages:
             raise HTTPException(400, "at least one user message is required")
-        result = STATE["retriever"].answer(user_messages[-1])
+        result = STATE["retriever"].answer(user_messages[-1], threshold=GROUND_THRESHOLD)
         text = result["answer"]
         prompt_tokens = len(STATE["tokenizer"](build_prompt(req.messages))["input_ids"])
         completion_tokens = len(STATE["tokenizer"](text)["input_ids"])
