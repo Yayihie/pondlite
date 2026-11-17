@@ -24,8 +24,37 @@ noise_patterns = [
 cleaned = []
 seen_questions = set()
 
-# Add existing questions to seen set
-for rec in existing:
+# Negative examples: out-of-domain questions that should trigger abstention
+# These teach the TF-IDF retriever to say "we don't do that" instead of
+# wrongly matching an auto repair answer for non-automotive questions.
+negative_examples = [
+    {"instruction": "Do you sell groceries?", "input": "", "output": "We don't sell groceries — we're an auto repair shop. We handle oil changes, brake repair, tires, and other automotive services. Call us at [PHONE] for car service."},
+    {"instruction": "Do you sell clothing?", "input": "", "output": "We don't sell clothing — we're an auto repair shop. We service and repair vehicles, not apparel. Call us at [PHONE]."},
+    {"instruction": "Do you deliver food?", "input": "", "output": "We don't deliver food — we're an auto repair shop. We fix cars, not meals. Call us at [PHONE] for automotive service."},
+    {"instruction": "Can I book a hotel room?", "input": "", "output": "We don't book hotel rooms — we're an auto repair shop. We repair and maintain vehicles. Call us at [PHONE]."},
+    {"instruction": "Do you sell electronics?", "input": "", "output": "We don't sell electronics — we're an auto repair shop. We service cars and trucks. Call us at [PHONE]."},
+    {"instruction": "Do you sell furniture?", "input": "", "output": "We don't sell furniture — we're an auto repair shop. We work on vehicles, not home goods. Call us at [PHONE]."},
+    {"instruction": "Can I buy a plane ticket?", "input": "", "output": "We don't sell plane tickets — we're an auto repair shop. We fix cars, not travel. Call us at [PHONE]."},
+    {"instruction": "Do you sell pets?", "input": "", "output": "We don't sell pets — we're an auto repair shop. We service vehicles. Call us at [PHONE] for car care."},
+    {"instruction": "Can I order pizza?", "input": "", "output": "We don't sell food or deliver pizza — we're an auto repair shop. We repair cars and trucks. Call us at [PHONE]."},
+    {"instruction": "Do you sell insurance?", "input": "", "output": "We don't sell insurance — we're an auto repair shop. We work on vehicles, not policies. Call us at [PHONE]."},
+    {"instruction": "Do you sell shoes?", "input": "", "output": "We don't sell shoes — we're an auto repair shop. We service and repair vehicles, not footwear. Call us at [PHONE]."},
+    {"instruction": "Do you sell books?", "input": "", "output": "We don't sell books — we're an auto repair shop. We work on cars and trucks, not books. Call us at [PHONE]."},
+    {"instruction": "Do you sell toys?", "input": "", "output": "We don't sell toys — we're an auto repair shop. We fix vehicles, not sell toys. Call us at [PHONE]."},
+    {"instruction": "Do you sell jewelry?", "input": "", "output": "We don't sell jewelry — we're an auto repair shop. We service vehicles, not sell accessories. Call us at [PHONE]."},
+    {"instruction": "Do you sell hardware?", "input": "", "output": "We don't sell hardware — we're an auto repair shop. We work on vehicles, not home improvement supplies. Call us at [PHONE]."},
+    {"instruction": "Are you a grocery store?", "input": "", "output": "No, we're not a grocery store — we're an auto repair shop. We repair and maintain vehicles. Call us at [PHONE]."},
+    {"instruction": "Are you a restaurant?", "input": "", "output": "No, we're not a restaurant — we're an auto repair shop. We fix cars, not serve food. Call us at [PHONE]."},
+    {"instruction": "Do you sell anything besides auto parts?", "input": "", "output": "No, we only sell automotive parts and services — we're an auto repair shop. Call us at [PHONE]."},
+    {"instruction": "Do you sell home appliances?", "input": "", "output": "We don't sell home appliances — we're an auto repair shop. We service vehicles, not refrigerators or washers. Call us at [PHONE]."},
+    {"instruction": "Do you sell garden supplies?", "input": "", "output": "We don't sell garden supplies — we're an auto repair shop. We work on cars and trucks. Call us at [PHONE]."},
+    {"instruction": "Can I walk in without an appointment?", "input": "", "output": "Yes, walk-ins are welcome. We recommend calling ahead at [PHONE] so we can give you a realistic wait time."},
+    {"instruction": "Do you accept walk-in customers?", "input": "", "output": "Yes, walk-ins are welcome. We recommend calling ahead at [PHONE] so we can give you a realistic wait time."},
+]
+
+# Add negative examples to existing data (they're part of the base training set)
+for rec in negative_examples:
+    existing.append(rec)
     seen_questions.add(rec["instruction"].lower().strip())
 
 for qa in scraped:
